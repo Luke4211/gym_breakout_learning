@@ -61,17 +61,14 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         if len(self.memory) > self.replay_memory_size:
             self.memory.pop(0)
-        #self.memory.append((state, action, reward, next_state, done))
-        #self.state_buffer.append(state)
+
         if len(self.state_buffer) == self.frame_stack_size:
             stacked_state = self.get_stack_frame_buffer()
-            #self.state_buffer.append(next_state)
 
             stacked_next_state = self.stack_next_frames(next_state)
             self.memory.append((stacked_state, action, reward, stacked_next_state, done))
 
     def act(self, state):
-        #self.state_buffer.append(state)
         stacked_state = self.stack_frames(state)
         if (np.random.rand() <= self.epsilon) or (len(self.state_buffer) < self.frame_stack_size):
             return random.randrange(self.action_space)
@@ -96,11 +93,6 @@ class DQNAgent:
     
     def stack_next_frames(self, next_state):
 
-        '''next_state_buffer = copy.deepcopy(self.state_buffer)
-        next_state_buffer.append(next_state)
-        next_state_buffer.popleft()
-        stacked_next_state = np.stack(next_state_buffer, axis=0)
-        return np.expand_dims(stacked_next_state, axis=0)'''
         next_state_buffer = list(self.state_buffer)  # Create a copy of the buffer
         next_state_buffer.append(next_state)  # Append the new state
         next_state_buffer.pop(0)  # Remove the oldest state if the buffer is full
@@ -120,14 +112,9 @@ class DQNAgent:
         next_states = np.array([i[3] for i in minibatch])
         dones = np.array([i[4] for i in minibatch])
 
-        '''states = np.squeeze(states)
-        next_states = np.squeeze(next_states)'''
         states = np.reshape(states, (actual_batch_size, self.frame_stack_size, *self.state_shape))
         next_states = np.reshape(next_states, (actual_batch_size, self.frame_stack_size, *self.state_shape))
 
-        # OLD
-        #targets = rewards + self.gamma*(np.amax(self.target_model.predict_on_batch(next_states), axis=1))*(1-dones)
-        #targets_full = self.model.predict_on_batch(states)
 
         targets = rewards + self.gamma*(np.amax(self.target_model.predict_on_batch(next_states), axis=1))*(1-dones)
         targets_full = self.model.predict_on_batch(states)
